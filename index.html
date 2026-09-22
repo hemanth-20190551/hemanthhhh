@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>590 Day Countdown</title>
+<style>
+  :root{
+    --bg-1:#f7f3ea;
+    --bg-2:#efe4c7;
+    --card-bg:#fffdf7;
+    --card-border:#e6dab8;
+    --text-main:#33301f;
+    --text-soft:#8a8163;
+    --accent-1:#0e9e6d;   /* emerald */
+    --accent-2:#12b980;   /* bright emerald */
+    --accent-3:#0a7a54;   /* deep emerald */
+    --today-glow:#0e9e6d;
+    --past-bg:#ede4cd;
+    --past-text:#a89c78;
+    --panel-bg:#fffdf7;
+    --shadow:0 4px 14px rgba(90,76,30,0.1);
+    --shadow-strong:0 10px 30px rgba(90,76,30,0.18);
+    --logged-dot:#0e9e6d;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(160deg,var(--bg-1),var(--bg-2) 60%);
+    color:var(--text-main);
+    min-height:100vh;
+  }
+
+  header{
+    padding:28px 20px 18px;
+    text-align:center;
+    position:relative;
+  }
+
+  header h1{
+    margin:0 0 6px;
+    font-size:clamp(22px,4vw,32px);
+    font-weight:700;
+    letter-spacing:-0.5px;
+    background:linear-gradient(90deg,var(--accent-2),var(--accent-1));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+
+  header p{
+    margin:0;
+    color:var(--text-soft);
+    font-size:14px;
+  }
+
+  .stats-bar{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px;
+    margin-top:16px;
+  }
+
+  .stat-pill{
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    border-radius:999px;
+    padding:8px 16px;
+    font-size:13px;
+    color:var(--text-soft);
+    box-shadow:var(--shadow);
+  }
+
+  .stat-pill strong{
+    color:var(--text-main);
+  }
+
+  .btn{
+    border:none;
+    border-radius:10px;
+    padding:9px 16px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+
+  .btn:active{ transform:scale(0.96); }
+
+  .btn-primary{
+    background:linear-gradient(90deg,var(--accent-2),var(--accent-1));
+    color:#eaf4fa;
+    box-shadow:0 4px 12px rgba(14,158,109,0.3);
+  }
+
+  .btn-secondary{
+    background:var(--card-bg);
+    color:var(--text-main);
+    border:1px solid var(--card-border);
+  }
+
+  .btn-danger{
+    background:#fbeae7;
+    color:#b3493a;
+    border:1px solid #f0cfc8;
+  }
+
+  main{
+    padding:12px 16px 60px;
+    max-width:1200px;
+    margin:0 auto;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(92px,1fr));
+    gap:10px;
+  }
+
+  .day-card{
+    position:relative;
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:10px 6px 8px;
+    text-align:center;
+    cursor:pointer;
+    box-shadow:var(--shadow);
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  .day-card:hover{
+    transform:translateY(-3px);
+    box-shadow:var(--shadow-strong);
+    border-color:var(--accent-1);
+  }
+
+  .day-card .month{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--text-soft);
+    font-weight:600;
+  }
+
+  .day-card .date-num{
+    font-size:20px;
+    font-weight:700;
+    margin:2px 0;
+    color:var(--text-main);
+  }
+
+  .day-card .weekday{
+    font-size:10px;
+    color:var(--text-soft);
+  }
+
+  .day-card .day-index{
+    margin-top:4px;
+    font-size:10px;
+    color:var(--accent-1);
+    font-weight:600;
+  }
+
+  .day-card.future{
+    background:linear-gradient(160deg,#ffffff,#faf5e6);
+  }
+
+  .day-card.today{
+    border:2px solid var(--today-glow);
+    box-shadow:0 0 0 4px rgba(14,158,109,0.15), var(--shadow-strong);
+  }
+
+  .day-card.today .date-num{ color:var(--today-glow); }
+
+  .day-card.past{
+    background:var(--past-bg);
+    opacity:0.75;
+  }
+
+  .day-card.past .date-num,
+  .day-card.past .month,
+  .day-card.past .weekday{
+    color:var(--past-text);
+  }
+
+  .logged-dot{
+    position:absolute;
+    top:6px;
+    right:6px;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--logged-dot);
+    box-shadow:0 0 0 2px var(--card-bg);
+  }
+
+  /* Side panel */
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(51,48,31,0.35);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease;
+    z-index:40;
+  }
+
+  .overlay.open{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  .side-panel{
+    position:fixed;
+    top:0;
+    right:0;
+    height:100%;
+    width:min(400px,100%);
+    background:var(--panel-bg);
+    box-shadow:-10px 0 30px rgba(0,0,0,0.4);
+    transform:translateX(100%);
+    transition:transform .3s ease;
+    z-index:50;
+    display:flex;
+    flex-direction:column;
+    padding:22px 20px;
+  }
+
+  .side-panel.open{
+    transform:translateX(0);
+  }
+
+  .panel-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:6px;
+  }
+
+  .panel-header h2{
+    margin:0;
+    font-size:20px;
+    color:var(--text-main);
+  }
+
+  .panel-header .sub{
+    font-size:13px;
+    color:var(--text-soft);
+    margin-top:4px;
+  }
+
+  .close-btn{
+    background:none;
+    border:none;
+    font-size:22px;
+    line-height:1;
+    color:var(--text-soft);
+    cursor:pointer;
+    padding:4px 8px;
+    border-radius:8px;
+  }
+
+  .close-btn:hover{ background:var(--past-bg); }
+
+  .panel-badge{
+    display:inline-block;
+    margin-top:10px;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.3px;
+  }
+
+  .badge-future{ background:#dff2e8; color:var(--accent-3); }
+  .badge-today{ background:#dff2e8; color:var(--today-glow); }
+  .badge-past{ background:var(--past-bg); color:var(--text-soft); }
+
+  textarea{
+    flex:1;
+    margin-top:18px;
+    width:100%;
+    min-height:220px;
+    resize:vertical;
+    border:1px solid var(--card-border);
+    border-radius:12px;
+    padding:14px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--text-main);
+    background:#fbf8f0;
+    outline:none;
+  }
+
+  textarea:focus{
+    border-color:var(--accent-1);
+    box-shadow:0 0 0 3px rgba(14,158,109,0.18);
+  }
+
+  .panel-footer{
+    display:flex;
+    gap:10px;
+    margin-top:16px;
+  }
+
+  .panel-footer .btn{ flex:1; }
+
+  .save-hint{
+    font-size:11px;
+    color:var(--text-soft);
+    margin-top:8px;
+    text-align:center;
+    min-height:14px;
+  }
+
+  @media (max-width:640px){
+    .side-panel{
+      width:100%;
+      height:88%;
+      top:auto;
+      bottom:0;
+      right:0;
+      border-radius:20px 20px 0 0;
+      transform:translateY(100%);
+    }
+    .side-panel.open{ transform:translateY(0); }
+    .grid{ grid-template-columns:repeat(auto-fill,minmax(76px,1fr)); }
+  }
+
+  footer{
+    text-align:center;
+    padding:20px;
+    color:var(--text-soft);
+    font-size:12px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>590 Day Countdown</h1>
+  <p>One card per day &mdash; click a day to write what you did.</p>
+  <div class="stats-bar">
+    <div class="stat-pill">Started <strong id="statStart">-</strong></div>
+    <div class="stat-pill">Target <strong id="statEnd">-</strong></div>
+    <div class="stat-pill"><strong id="statDaysLeft">-</strong> days left</div>
+    <div class="stat-pill"><strong id="statLogged">0</strong> days logged</div>
+  </div>
+</header>
+
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>Data is saved automatically in your browser.</footer>
+
+<div class="overlay" id="overlay"></div>
+<div class="side-panel" id="sidePanel">
+  <div class="panel-header">
+    <div>
+      <h2 id="panelDate">-</h2>
+      <div class="sub" id="panelWeekday">-</div>
+      <span class="panel-badge" id="panelBadge">-</span>
+    </div>
+    <button class="close-btn" id="closeBtn">&times;</button>
+  </div>
+  <textarea id="panelText" placeholder="What did you do today? Write anything &mdash; a win, a lesson, a plan..."></textarea>
+  <div class="panel-footer">
+    <button class="btn btn-danger" id="deleteBtn">Delete</button>
+    <button class="btn btn-primary" id="saveBtn">Save</button>
+  </div>
+  <div class="save-hint" id="saveHint"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "countdown590_data";
+  var START_DATE = "2026-09-23";
+  var TOTAL_DAYS = 590;
+
+  var state = {
+    startDate: START_DATE,
+    totalDays: TOTAL_DAYS,
+    entries: {}
+  };
+
+  var activeDateKey = null;
+
+  var grid = document.getElementById("grid");
+  var overlay = document.getElementById("overlay");
+  var sidePanel = document.getElementById("sidePanel");
+  var panelDate = document.getElementById("panelDate");
+  var panelWeekday = document.getElementById("panelWeekday");
+  var panelBadge = document.getElementById("panelBadge");
+  var panelText = document.getElementById("panelText");
+  var closeBtn = document.getElementById("closeBtn");
+  var saveBtn = document.getElementById("saveBtn");
+  var deleteBtn = document.getElementById("deleteBtn");
+  var saveHint = document.getElementById("saveHint");
+
+  var statStart = document.getElementById("statStart");
+  var statEnd = document.getElementById("statEnd");
+  var statDaysLeft = document.getElementById("statDaysLeft");
+  var statLogged = document.getElementById("statLogged");
+
+  function toDateKey(d){
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,"0");
+    var day = String(d.getDate()).padStart(2,"0");
+    return y+"-"+m+"-"+day;
+  }
+
+  function todayAtMidnight(){
+    var t = new Date();
+    t.setHours(0,0,0,0);
+    return t;
+  }
+
+  function loadEntriesFromStorage(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(parsed && parsed.entries){
+          return parsed.entries;
+        }
+      }
+    }catch(e){ console.warn("Could not read local storage", e); }
+    return {};
+  }
+
+  function saveToStorage(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch(e){ console.warn("Could not save to local storage", e); }
+  }
+
+  function init(){
+    state.entries = loadEntriesFromStorage();
+    saveToStorage();
+    render();
+  }
+
+  function render(){
+    renderStats();
+    renderGrid();
+  }
+
+  function renderStats(){
+    var start = new Date(state.startDate + "T00:00:00");
+    var end = new Date(start);
+    end.setDate(end.getDate() + state.totalDays - 1);
+    var today = todayAtMidnight();
+
+    var msPerDay = 86400000;
+    var daysLeft = Math.ceil((end - today) / msPerDay);
+    if(daysLeft < 0) daysLeft = 0;
+
+    statStart.textContent = start.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
+    statEnd.textContent = end.toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
+    statDaysLeft.textContent = daysLeft;
+    statLogged.textContent = Object.keys(state.entries).filter(function(k){
+      return state.entries[k] && state.entries[k].text && state.entries[k].text.trim().length > 0;
+    }).length;
+  }
+
+  function renderGrid(){
+    var frag = document.createDocumentFragment();
+    var start = new Date(state.startDate + "T00:00:00");
+    var today = todayAtMidnight();
+
+    for(var i=0; i<state.totalDays; i++){
+      var d = new Date(start);
+      d.setDate(d.getDate() + i);
+      var key = toDateKey(d);
+
+      var card = document.createElement("div");
+      card.className = "day-card";
+      card.dataset.key = key;
+
+      if(d.getTime() === today.getTime()){
+        card.className += " today";
+      } else if(d.getTime() < today.getTime()){
+        card.className += " past";
+      } else {
+        card.className += " future";
+      }
+
+      var month = document.createElement("div");
+      month.className = "month";
+      month.textContent = d.toLocaleDateString(undefined,{month:"short"});
+
+      var dateNum = document.createElement("div");
+      dateNum.className = "date-num";
+      dateNum.textContent = d.getDate();
+
+      var weekday = document.createElement("div");
+      weekday.className = "weekday";
+      weekday.textContent = d.toLocaleDateString(undefined,{weekday:"short"});
+
+      var dayIndex = document.createElement("div");
+      dayIndex.className = "day-index";
+      dayIndex.textContent = "Day " + (i+1);
+
+      card.appendChild(month);
+      card.appendChild(dateNum);
+      card.appendChild(weekday);
+      card.appendChild(dayIndex);
+
+      var entry = state.entries[key];
+      if(entry && entry.text && entry.text.trim().length > 0){
+        var dot = document.createElement("div");
+        dot.className = "logged-dot";
+        card.appendChild(dot);
+      }
+
+      card.addEventListener("click", (function(k, dt){
+        return function(){ openPanel(k, dt); };
+      })(key, d));
+
+      frag.appendChild(card);
+    }
+
+    grid.innerHTML = "";
+    grid.appendChild(frag);
+  }
+
+  function openPanel(key, date){
+    activeDateKey = key;
+    var today = todayAtMidnight();
+    var d = new Date(date);
+    d.setHours(0,0,0,0);
+
+    panelDate.textContent = d.toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
+    panelWeekday.textContent = d.toLocaleDateString(undefined,{weekday:"long"});
+
+    panelBadge.className = "panel-badge";
+    if(d.getTime() === today.getTime()){
+      panelBadge.classList.add("badge-today");
+      panelBadge.textContent = "Today";
+    } else if(d.getTime() < today.getTime()){
+      panelBadge.classList.add("badge-past");
+      panelBadge.textContent = "Past";
+    } else {
+      panelBadge.classList.add("badge-future");
+      panelBadge.textContent = "Upcoming";
+    }
+
+    var entry = state.entries[key];
+    panelText.value = entry && entry.text ? entry.text : "";
+    saveHint.textContent = entry && entry.updatedAt ? ("Last saved " + new Date(entry.updatedAt).toLocaleString()) : "";
+
+    overlay.classList.add("open");
+    sidePanel.classList.add("open");
+    setTimeout(function(){ panelText.focus(); }, 250);
+  }
+
+  function closePanel(){
+    overlay.classList.remove("open");
+    sidePanel.classList.remove("open");
+    activeDateKey = null;
+  }
+
+  function saveEntry(){
+    if(!activeDateKey) return;
+    var text = panelText.value;
+    if(text.trim().length === 0){
+      delete state.entries[activeDateKey];
+    } else {
+      state.entries[activeDateKey] = {
+        text: text,
+        updatedAt: new Date().toISOString()
+      };
+    }
+    saveToStorage();
+    render();
+    saveHint.textContent = "Saved just now";
+  }
+
+  function deleteEntry(){
+    if(!activeDateKey) return;
+    delete state.entries[activeDateKey];
+    panelText.value = "";
+    saveToStorage();
+    render();
+    saveHint.textContent = "Cleared";
+  }
+
+  closeBtn.addEventListener("click", closePanel);
+  overlay.addEventListener("click", closePanel);
+  saveBtn.addEventListener("click", saveEntry);
+  deleteBtn.addEventListener("click", deleteEntry);
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape") closePanel();
+  });
+
+  init();
+})();
+</script>
+
+</body>
+</html>
